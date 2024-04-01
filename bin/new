@@ -1,0 +1,123 @@
+#! /bin/sh -eu
+
+me=$0
+medir=`dirname "$me"`
+
+displayHelpMessage () {
+    cat >&2 <<EOF
+
+$0 <package_name>
+
+EOF
+}
+
+${1+:} false || {
+    displayHelpMessage
+
+    exit 2
+}
+
+pkgdir=`realpath "${medir}/.."`
+srcdir="${pkgdir}/src"
+
+defaultpkgname=acme
+defaultclassname=Acme
+testClassSuffix='Test'
+pkgmanagerfile=setup.cfg
+codefileext=py
+defaultnamespacedir="${pkgdir}/src/${defaultclassname}"
+defaulttestsdir="${defaultnamespacedir}/Tests"
+GIT=git
+SED=sed
+
+main ()
+{
+    pkgname=$1
+    classname=`formatToUpperCamelCase "${pkgname}"`
+    namespacedir="${srcdir}/${classname}"
+    testsdir="${namespacedir}/Tests"
+
+    createNewBranch
+    configurePackageName
+
+    configureClassName
+
+    removeSkeletonArtefact
+    commit
+
+    echo
+    echo "Open ${testsdir}/${classname}${testClassSuffix}.${codefileext}"
+    echo
+    echo "And start coding"
+    echo
+}
+
+formatToUpperCamelCase ()
+{
+    echo "${1}" | tr '_' ' ' | sed -e 's,\b.,\U&,g' -e 's, ,,g'
+}
+
+createNewBranch ()
+{
+    checkWorkingTree
+
+    nowday=`date '+%F_%T' | tr : -`
+
+    git checkout -b "${nowday}_${pkgname}"
+}
+
+configurePackageName ()
+{
+    sed -i "s/${defaultpkgname}/${pkgname}/g" \
+        "${pkgdir}/${pkgmanagerfile}"
+
+    sed -i "s/${defaultclassname}/${classname}/g" \
+        "${pkgdir}/${pkgmanagerfile}"
+}
+
+configureClassName ()
+{
+    sed -i "s/${defaultclassname}/${classname}/" \
+        "${defaulttestsdir}/${defaultclassname}${testClassSuffix}.${codefileext}"
+
+    mv "${defaulttestsdir}/${defaultclassname}${testClassSuffix}.${codefileext}" \
+       "${defaulttestsdir}/${classname}${testClassSuffix}.${codefileext}"
+
+    mv "${defaultnamespacedir}" \
+        "${namespacedir}"
+}
+
+removeSkeletonArtefact ()
+{
+    git rm $me
+}
+
+commit ()
+{
+    git add \
+        "${pkgdir}/${pkgmanagerfile}" \
+        "${srcdir}" \
+    ;
+
+    git commit -pm"Add ${pkgname}"
+}
+
+checkWorkingTree()
+{
+    ${GIT} update-index --refresh > /dev/null || :
+
+    test x = x"`${GIT} diff-index --name-only HEAD --`" || {
+        echo >&2
+        echo >&2 '    The working tree is dirty.'
+        echo >&2 '    Please stash or deal with modifications to proceed:'
+        echo >&2
+        {
+            ${GIT} diff-index --name-only HEAD -- | ${SED} -e 's,^,        ,'
+        } >&2
+        echo >&2
+
+        return 3
+    }
+}
+
+main ${1+"$@"}

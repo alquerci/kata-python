@@ -1,0 +1,9 @@
+#! /bin/sh -eu
+
+medir=`dirname "$0"`
+
+"${medir}"/execute python -m unittest \
+    discover \
+        --start-directory=./src \
+        --pattern='*Test.py' \
+    ;

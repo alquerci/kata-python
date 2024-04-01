@@ -1,0 +1,5 @@
+#! /bin/sh -eu
+
+medir=`dirname "$0"`
+
+"${medir}/pip" install --user -r "${medir}/../requirements-lock.txt"

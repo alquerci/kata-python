@@ -1,0 +1,7 @@
+#! /bin/sh -eu
+
+medir=`dirname "$0"`
+
+"${medir}/pip" uninstall --yes "$@"
+
+"${medir}/package-freeze"

@@ -1,0 +1,16 @@
+#! /bin/sh -eu
+
+tty=
+test -t 0 || tty='-T'
+test -t 1 || tty='-T'
+
+docker-compose build > /dev/null
+
+exitcode=0
+docker-compose run ${tty} --rm -u `id -u`:`id -g` app sh -euxc "$*" || {
+    exitcode=$?
+}
+
+docker-compose down
+
+exit $exitcode

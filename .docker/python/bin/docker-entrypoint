@@ -1,0 +1,7 @@
+#! /bin/sh -eu
+
+if test x"" != x"${PYTHONUSERBASE-}"; then
+    export PATH="${PYTHONUSERBASE}/bin:$PATH"
+else :; fi
+
+exec "$@"
